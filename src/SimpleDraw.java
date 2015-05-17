@@ -214,10 +214,22 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 		gw.frame( drawing.getBoundingRectangle(), true );
 	}
 	public void flipSelection(){
+		float min = selectedStrokes.get(0).getBoundingRectangle().getMin().x();
+		float max = selectedStrokes.get(0).getBoundingRectangle().getMax().x();
+		for (Stroke s : selectedStrokes){
+			
+			System.out.println(max - min);
+			if (s.getBoundingRectangle().getMax().x() > max){
+				max = s.getBoundingRectangle().getMax().x();
+			}
+			if (s.getBoundingRectangle().getMin().x() < min){
+				min = s.getBoundingRectangle().getMin().x();
+			}
+		}
 		for (Stroke s : selectedStrokes){
 			Stroke strokeClone = new Stroke();
 			for (Point2D p : s.getPoints()){
-				Point2D temp = new Point2D(p.x() + 2 * (drawing.getBoundingRectangleSelected(selectedStrokes).getCenter().x()-p.x()),p.y());
+				Point2D temp = new Point2D(p.x() + 2 * (min + (max-min)/2-p.x()),p.y());
 				
 				strokeClone.addPoint(temp);
 			}
