@@ -43,6 +43,9 @@ class Stroke {
 		return points;
 	}
 
+	
+
+	
 	public AlignedRectangle2D getBoundingRectangle() {
 		if ( isBoundingRectangleDirty ) {
 			boundingRectangle.clear();
@@ -56,6 +59,8 @@ class Stroke {
 	public void markBoundingRectangleDirty() {
 		isBoundingRectangleDirty = true;
 	}
+	
+	
 
 	public boolean isContainedInRectangle( AlignedRectangle2D r ) {
 		return r.contains( getBoundingRectangle() );
@@ -112,6 +117,23 @@ class Drawing {
 		boundingRectangle.clear();
 	}
 
+	
+	public AlignedRectangle2D getBoundingRectangleSelected(ArrayList<Stroke> selectedStrokes) {
+	
+			boundingRectangle.clear();
+			for ( Stroke s : strokes ) {
+				for(Stroke selectedStroke : selectedStrokes)
+				{
+					if(s == selectedStroke)
+						boundingRectangle.bound( s.getBoundingRectangle() );
+				}
+				
+			}
+			isBoundingRectangleDirty = false;
+	
+		return boundingRectangle;
+	}
+	
 	public AlignedRectangle2D getBoundingRectangle() {
 		if ( isBoundingRectangleDirty ) {
 			boundingRectangle.clear();
@@ -190,6 +212,38 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 	}
 	public void frameDrawing() {
 		gw.frame( drawing.getBoundingRectangle(), true );
+	}
+	
+	public void frameSelectionDrawing() {
+		
+		//we initialize the opposite wanted value and change it in the loop
+		float lowestCoordinateX = gw.getWidth(); //top left
+		float lowestCoordinateY = gw.getHeight(); //top left
+		float highestCoordinateX = 0; // bottom right
+		float highestCoordinateY = 0; // bottom right
+		
+		for(Stroke s : selectedStrokes)
+		{
+			float minX = s.getBoundingRectangle().getMin().x();
+			float minY = s.getBoundingRectangle().getMin().y();
+			float maxX = s.getBoundingRectangle().getMax().x();
+			float maxY = s.getBoundingRectangle().getMax().y();
+			
+			if(lowestCoordinateX > minX)
+				lowestCoordinateX = minX;
+			
+			if(lowestCoordinateY > minY)
+				lowestCoordinateY = minY;
+			
+			if(highestCoordinateX > maxX)
+				highestCoordinateX = maxX;
+			
+			if(highestCoordinateY > maxY)
+				highestCoordinateY = maxY;
+		}
+		//AlignedRectangle2D rect = new AlignedRectangle2D(new Point2D(lowestCoordinateX,lowestCoordinateY),new Point2D(highestCoordinateX,highestCoordinateY));
+		//System.out.println(rect.getMin().x() + " " + rect.getMin().y() + " " + rect.getMax().x() + " " + rect.getMax().y());
+		gw.frame( drawing.getBoundingRectangleSelected(selectedStrokes), true);
 	}
 	public void paintComponent( Graphics g ) {
 		super.paintComponent( g );
@@ -339,7 +393,9 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 					gw.convertPixelsToWorldSpaceUnits( new Point2D( mouse_x, mouse_y ) )
 				);
 				if(!e.isControlDown())
+				{
 					selectedStrokes.clear();
+				}
 				for ( Stroke s : drawing.strokes ) {
 					if ( s.isContainedInRectangle( selectedRectangle ) )
 						selectedStrokes.add( s );
@@ -436,6 +492,7 @@ public class SimpleDraw implements ActionListener {
 
 	JButton deleteButton;
 	JButton frameButton;
+	JButton frameSelectionButton;
 
 	public void setCurrentMode( int mode ) {
 		currentMode = mode;
@@ -488,6 +545,10 @@ public class SimpleDraw implements ActionListener {
 		}
 		else if ( source == frameButton ) {
 			canvas.frameDrawing();
+			canvas.repaint();
+		}
+		else if ( source == frameSelectionButton ) {
+			canvas.frameSelectionDrawing();
 			canvas.repaint();
 		}
 		else {
@@ -567,12 +628,20 @@ public class SimpleDraw implements ActionListener {
 		deleteButton = new JButton( "Delete Selection" );
 		deleteButton.setAlignmentX( Component.LEFT_ALIGNMENT );
 		deleteButton.addActionListener(this);
+		deleteButton.setToolTipText("Deletes a selected stroke.");
 		toolPanel.add( deleteButton );
 
 		frameButton = new JButton( "Frame Drawing" );
 		frameButton.setAlignmentX( Component.LEFT_ALIGNMENT );
 		frameButton.addActionListener(this);
+		frameButton.setToolTipText("Reset canvas size to fit the strokes.");
 		toolPanel.add( frameButton );
+		
+		frameSelectionButton = new JButton( "Frame Selection" );
+		frameSelectionButton.setAlignmentX( Component.LEFT_ALIGNMENT );
+		frameSelectionButton.addActionListener(this);
+		frameSelectionButton.setToolTipText("Reset canvas size to only fit the selected strokes.");
+		toolPanel.add( frameSelectionButton );
 
 		frame.pack();
 		frame.setVisible( true );
