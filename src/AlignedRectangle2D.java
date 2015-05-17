@@ -1,6 +1,7 @@
 
 public class AlignedRectangle2D {
 //test
+//test 2
 	public boolean isEmpty = true;
 	private Point2D min = new Point2D(0,0);
 	private Point2D max = new Point2D(0,0);
