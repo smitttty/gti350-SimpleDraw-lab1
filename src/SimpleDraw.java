@@ -248,7 +248,7 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 			Stroke newStroke = new Stroke();
 			
 			for(Point2D p : s.getPoints())
-				newStroke.addPoint( gw.convertPixelsToWorldSpaceUnits(p));
+				newStroke.addPoint(new Point2D(p.x(), p.y()));
 			
 			selectedStrokes.remove(s);
 			newStroke.translate(new Vector2D(100,100));
