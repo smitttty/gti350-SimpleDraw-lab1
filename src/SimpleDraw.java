@@ -44,8 +44,6 @@ class Stroke {
 	}
 
 	
-
-	
 	public AlignedRectangle2D getBoundingRectangle() {
 		if ( isBoundingRectangleDirty ) {
 			boundingRectangle.clear();
@@ -214,37 +212,25 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 		gw.frame( drawing.getBoundingRectangle(), true );
 	}
 	
-	public void frameSelectionDrawing() {
-		
-		//we initialize the opposite wanted value and change it in the loop
-		float lowestCoordinateX = gw.getWidth(); //top left
-		float lowestCoordinateY = gw.getHeight(); //top left
-		float highestCoordinateX = 0; // bottom right
-		float highestCoordinateY = 0; // bottom right
-		
-		for(Stroke s : selectedStrokes)
-		{
-			float minX = s.getBoundingRectangle().getMin().x();
-			float minY = s.getBoundingRectangle().getMin().y();
-			float maxX = s.getBoundingRectangle().getMax().x();
-			float maxY = s.getBoundingRectangle().getMax().y();
+	public void copySelection()
+	{
+		for ( Stroke s : selectedStrokes ) {
+			Stroke newStroke = new Stroke();
 			
-			if(lowestCoordinateX > minX)
-				lowestCoordinateX = minX;
+			for(Point2D p : s.getPoints())
+				newStroke.addPoint( gw.convertPixelsToWorldSpaceUnits(p));
 			
-			if(lowestCoordinateY > minY)
-				lowestCoordinateY = minY;
-			
-			if(highestCoordinateX > maxX)
-				highestCoordinateX = maxX;
-			
-			if(highestCoordinateY > maxY)
-				highestCoordinateY = maxY;
+			selectedStrokes.remove(s);
+			newStroke.translate(new Vector2D(100,100));
+			selectedStrokes.add(newStroke);
+			drawing.addStroke(newStroke);
 		}
-		//AlignedRectangle2D rect = new AlignedRectangle2D(new Point2D(lowestCoordinateX,lowestCoordinateY),new Point2D(highestCoordinateX,highestCoordinateY));
-		//System.out.println(rect.getMin().x() + " " + rect.getMin().y() + " " + rect.getMax().x() + " " + rect.getMax().y());
+	}
+	
+	public void frameSelectionDrawing() {
 		gw.frame( drawing.getBoundingRectangleSelected(selectedStrokes), true);
 	}
+	
 	public void paintComponent( Graphics g ) {
 		super.paintComponent( g );
 		gw.set( g );
@@ -363,7 +349,7 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 					
 					Point2D mouseCoordinates = new Point2D(e.getX(), e.getY());
 					Stroke closestStroke = null;
-					float smallestDistance = 100000000;
+					float smallestDistance = drawing.getBoundingRectangle().getMax().x();
 					
 					for ( Stroke s : drawing.strokes ) {
 						
@@ -490,6 +476,7 @@ public class SimpleDraw implements ActionListener {
 	public String [] modeNames = new String[ NUM_MODES ];
 	public int currentMode = MODE_PENCIL;
 
+	JButton copyButton;
 	JButton deleteButton;
 	JButton frameButton;
 	JButton frameSelectionButton;
@@ -545,6 +532,10 @@ public class SimpleDraw implements ActionListener {
 		}
 		else if ( source == frameButton ) {
 			canvas.frameDrawing();
+			canvas.repaint();
+		}
+		else if ( source == copyButton ) {
+			canvas.copySelection();
 			canvas.repaint();
 		}
 		else if ( source == frameSelectionButton ) {
@@ -625,6 +616,12 @@ public class SimpleDraw implements ActionListener {
 			group.add( modeButtons[i] );
 		}
 
+		copyButton = new JButton( "Copy Selection" );
+		copyButton.setAlignmentX( Component.LEFT_ALIGNMENT );
+		copyButton.addActionListener(this);
+		copyButton.setToolTipText("Duplicates a selected stroke.");
+		toolPanel.add( copyButton );
+		
 		deleteButton = new JButton( "Delete Selection" );
 		deleteButton.setAlignmentX( Component.LEFT_ALIGNMENT );
 		deleteButton.addActionListener(this);

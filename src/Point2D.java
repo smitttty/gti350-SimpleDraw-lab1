@@ -40,6 +40,9 @@ public class Point2D {
 
 	public float x() { return p[0]; }
 	public float y() { return p[1]; }
+	
+	public void setX(int val) { p[0] += val; }
+	public void setY(int val) { p[1] += val; }
 
 	// used to pass coordinates directly to OpenGL routines
 	public float [] get() { return p; }
