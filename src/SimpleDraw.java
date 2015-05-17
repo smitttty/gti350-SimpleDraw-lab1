@@ -11,6 +11,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -116,7 +117,7 @@ class Drawing {
 	}
 
 	
-	public AlignedRectangle2D getBoundingRectangleSelected(ArrayList<Stroke> selectedStrokes) {
+	public AlignedRectangle2D getBoundingRectangleSelected(CopyOnWriteArrayList<Stroke> selectedStrokes) {
 	
 			boundingRectangle.clear();
 			for ( Stroke s : strokes ) {
@@ -170,7 +171,7 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 	Drawing drawing = new Drawing();
 
 	// stores a subset of the strokes
-	ArrayList< Stroke > selectedStrokes = new ArrayList< Stroke >();
+	CopyOnWriteArrayList< Stroke > selectedStrokes = new CopyOnWriteArrayList< Stroke >();
 
 	int mouse_x, mouse_y, previous_mouse_x, previous_mouse_y, drag_start_x, drag_start_y, previous_mouse_click_x, previous_mouse_click_y;
 	ArrayList< Point2D > pointerHistory = new ArrayList< Point2D >();
