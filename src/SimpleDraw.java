@@ -1,32 +1,30 @@
 
-import java.util.ArrayList;
-
-import java.awt.Container;
-import java.awt.Component;
-import java.awt.Graphics;
 // import java.awt.Graphics2D;
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
-
+import java.awt.Graphics;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
+import java.util.ArrayList;
 
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JMenuBar;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
-import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JRadioButton;
-import javax.swing.JButton;
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
-import javax.swing.ButtonGroup;
-import javax.swing.BoxLayout;
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
+import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.SwingUtilities;
 
 
 // This stores a polygonal line, creating by a stroke of the pointing device.
@@ -154,7 +152,7 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 	// stores a subset of the strokes
 	ArrayList< Stroke > selectedStrokes = new ArrayList< Stroke >();
 
-	int mouse_x, mouse_y, previous_mouse_x, previous_mouse_y, drag_start_x, drag_start_y;
+	int mouse_x, mouse_y, previous_mouse_x, previous_mouse_y, drag_start_x, drag_start_y, previous_mouse_click_x, previous_mouse_click_y;
 	ArrayList< Point2D > pointerHistory = new ArrayList< Point2D >();
 
 	private static final int DRAG_MODE_NONE = 0;
@@ -236,6 +234,8 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 		if ( radialMenu.isVisible() )
 			radialMenu.draw( gw );
 	}
+	
+	
 
 	public void mouseClicked( MouseEvent e ) { }
 	public void mouseEntered( MouseEvent e ) { }
@@ -248,8 +248,8 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 			// so ignore the press event from this new button.
 			return;
 
-		drag_start_x = previous_mouse_x = mouse_x = e.getX();
-		drag_start_y = previous_mouse_y = mouse_y = e.getY();
+		previous_mouse_click_x = drag_start_x = previous_mouse_x = mouse_x = e.getX();
+		previous_mouse_click_y = drag_start_y = previous_mouse_y = mouse_y = e.getY();
 
 		if ( radialMenu.isVisible() || (SwingUtilities.isRightMouseButton(e) && !e.isShiftDown()) ) {
 			int returnValue = radialMenu.pressEvent( mouse_x, mouse_y );
@@ -302,12 +302,44 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 				drawing.addStroke( newStroke );
 				break;
 			case SimpleDraw.MODE_RECT_SELECT :
+				
+				// modifcation #3 - if you are on the selection mode, and you press and release on the same pixel
+				if(previous_mouse_click_x == e.getX() && previous_mouse_click_y == e.getY())
+				{
+					
+					Point2D mouseCoordinates = new Point2D(e.getX(), e.getY());
+					Stroke closestStroke = null;
+					float smallestDistance = 100000000;
+					
+					for ( Stroke s : drawing.strokes ) {
+						
+						for (Point2D p : s.getPoints() ) //loop around mouse to find a point
+						{
+							
+							if(smallestDistance > p.distance(mouseCoordinates))
+							{
+								closestStroke = s;
+								smallestDistance = p.distance(mouseCoordinates);
+							}
+							
+						
+						}
+					}
+					
+					if(!e.isControlDown())
+						selectedStrokes.clear();
+					
+					selectedStrokes.add( closestStroke );
+					break;
+				}
+				
 				// complete a rectangle selection
 				AlignedRectangle2D selectedRectangle = new AlignedRectangle2D(
 					gw.convertPixelsToWorldSpaceUnits( new Point2D( drag_start_x, drag_start_y ) ),
 					gw.convertPixelsToWorldSpaceUnits( new Point2D( mouse_x, mouse_y ) )
 				);
-				selectedStrokes.clear();
+				if(!e.isControlDown())
+					selectedStrokes.clear();
 				for ( Stroke s : drawing.strokes ) {
 					if ( s.isContainedInRectangle( selectedRectangle ) )
 						selectedStrokes.add( s );
@@ -319,6 +351,8 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 			currentDragMode = DRAG_MODE_NONE;
 			repaint();
 		}
+		
+		
 	}
 
 	public void mouseMoved( MouseEvent e ) {
