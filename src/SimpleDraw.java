@@ -192,6 +192,7 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 		radialMenu.setItemLabelAndID( RadialMenuWidget.NORTH,      sd.modeNames[ sd.MODE_PENCIL ],           sd.MODE_PENCIL );
 		radialMenu.setItemLabelAndID( RadialMenuWidget.EAST,       sd.modeNames[ sd.MODE_RECT_SELECT ],      sd.MODE_RECT_SELECT );
 		radialMenu.setItemLabelAndID( RadialMenuWidget.WEST,       sd.modeNames[ sd.MODE_MOVE_SELECTION ],   sd.MODE_MOVE_SELECTION );
+		radialMenu.setItemLabelAndID( RadialMenuWidget.SOUTH,      "Flip Selection",   3 );
 	}
 	public Dimension getPreferredSize() {
 		return new Dimension( Constant.INITIAL_WINDOW_WIDTH, Constant.INITIAL_WINDOW_HEIGHT );
@@ -211,7 +212,23 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 	public void frameDrawing() {
 		gw.frame( drawing.getBoundingRectangle(), true );
 	}
-	
+	public void flipSelection(){
+		for (Stroke s : selectedStrokes){
+			Stroke strokeClone = new Stroke();
+			for (Point2D p : s.getPoints()){
+				Point2D temp = new Point2D(p.x() + 2 * (drawing.getBoundingRectangleSelected(selectedStrokes).getCenter().x()-p.x()),p.y());
+				
+				strokeClone.addPoint(temp);
+			}
+			s.getPoints().clear();
+			for (Point2D p : strokeClone.getPoints()){
+				s.addPoint(p);
+			}
+			s.draw(gw);
+			
+		}
+
+	}
 	public void copySelection()
 	{
 		for ( Stroke s : selectedStrokes ) {
@@ -319,7 +336,9 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 			if ( 0 <= itemID && itemID < SimpleDraw.NUM_MODES ) {
 				simpleDraw.setCurrentMode(itemID);
 			}
-
+			if (itemID == 3){
+				simpleDraw.canvas.flipSelection();
+			}
 			if ( returnValue == CustomWidget.S_REDRAW )
 				repaint();
 			if ( returnValue != CustomWidget.S_EVENT_NOT_CONSUMED )
@@ -478,6 +497,7 @@ public class SimpleDraw implements ActionListener {
 
 	JButton copyButton;
 	JButton deleteButton;
+	JButton flipButton;
 	JButton frameButton;
 	JButton frameSelectionButton;
 
@@ -528,6 +548,10 @@ public class SimpleDraw implements ActionListener {
 		}
 		else if ( source == deleteButton ) {
 			canvas.deleteSelection();
+			canvas.repaint();
+		}
+		else if ( source == flipButton ) {
+			canvas.flipSelection();
 			canvas.repaint();
 		}
 		else if ( source == frameButton ) {
@@ -639,7 +663,12 @@ public class SimpleDraw implements ActionListener {
 		frameSelectionButton.addActionListener(this);
 		frameSelectionButton.setToolTipText("Reset canvas size to only fit the selected strokes.");
 		toolPanel.add( frameSelectionButton );
-
+		
+		flipButton = new JButton( "Flip Selection" );
+		flipButton.setAlignmentX( Component.LEFT_ALIGNMENT );
+		flipButton.addActionListener(this);
+		toolPanel.add( flipButton );
+		
 		frame.pack();
 		frame.setVisible( true );
 	}
