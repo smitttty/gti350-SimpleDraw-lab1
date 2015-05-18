@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -19,6 +20,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -35,7 +37,29 @@ class Stroke {
 
 	private AlignedRectangle2D boundingRectangle = new AlignedRectangle2D();
 	private boolean isBoundingRectangleDirty = false;
-
+	private Color Color;
+	
+	public Stroke(int color)
+	{
+		switch(color) {
+		case SimpleDraw.COLOR_BLACK :
+			Color = Color.BLACK;
+			break;
+		case SimpleDraw.COLOR_RED :
+			Color = Color.RED;
+			break;
+		case SimpleDraw.COLOR_GREEN :
+			Color = Color.GREEN;
+			break;
+		}
+	}
+	public Stroke(Color color)
+	{
+		Color = color;	
+	}
+	public Color getColor() {
+		return Color;
+	}	
 	public void addPoint( Point2D p ) {
 		points.add( p );
 		isBoundingRectangleDirty = true;
@@ -92,8 +116,8 @@ class Stroke {
 		markBoundingRectangleDirty();
 	}
 
-	public void draw( GraphicsWrapper gw ) {
-		gw.drawPolyline( points );
+	public void draw( GraphicsWrapper gw, Color color ) {
+		gw.drawPolyline( points, color );
 	}
 }
 
@@ -147,10 +171,10 @@ class Drawing {
 		isBoundingRectangleDirty = true;
 	}
 
-	public void draw( GraphicsWrapper gw ) {
+	public void draw( GraphicsWrapper gw,Color color ) {
 		gw.setLineWidth( 5 );
 		for ( Stroke s : strokes ) {
-			s.draw( gw );
+			s.draw( gw, s.getColor() );
 		}
 		gw.setLineWidth( 1 );
 	}
@@ -227,7 +251,7 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 			}
 		}
 		for (Stroke s : selectedStrokes){
-			Stroke strokeClone = new Stroke();
+			Stroke strokeClone = new Stroke(s.getColor());
 			for (Point2D p : s.getPoints()){
 				Point2D temp = new Point2D(p.x() + 2 * (min + (max-min)/2-p.x()),p.y());
 				
@@ -237,7 +261,7 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 			for (Point2D p : strokeClone.getPoints()){
 				s.addPoint(p);
 			}
-			s.draw(gw);
+			s.draw(gw, s.getColor());
 			
 		}
 
@@ -245,7 +269,7 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 	public void copySelection()
 	{
 		for ( Stroke s : selectedStrokes ) {
-			Stroke newStroke = new Stroke();
+			Stroke newStroke = new Stroke(s.getColor());
 			
 			for(Point2D p : s.getPoints())
 				newStroke.addPoint(new Point2D(p.x(), p.y()));
@@ -279,8 +303,23 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 			gw.fillRect( r.getMin().x(), r.getMin().y(), diagonal.x(), diagonal.y() );
 		}
 
+Color strokeColor = new Color(0,0,0);
+		
+		switch(simpleDraw.currentColor) {
+		case SimpleDraw.COLOR_BLACK :
+			strokeColor = Color.BLACK;
+			break;
+		case SimpleDraw.COLOR_RED :
+			strokeColor = Color.RED;
+			break;
+		case SimpleDraw.COLOR_GREEN :
+			strokeColor = Color.GREEN;
+			break;
+		}
+		
+		
 		gw.setColor( 0, 0, 0 );
-		drawing.draw( gw );
+		drawing.draw( gw, strokeColor );
 
 		gw.setCoordinateSystemToPixels();
 
@@ -288,7 +327,7 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 			switch ( simpleDraw.currentMode ) {
 			case SimpleDraw.MODE_PENCIL :
 				gw.setColor( 0, 0, 0 );
-				gw.drawPolyline( pointerHistory );
+				gw.drawPolyline( pointerHistory,strokeColor );
 				break;
 			case SimpleDraw.MODE_RECT_SELECT :
 				gw.setColor( 1.0f, 0.5f, 0, 0.3f ); // transparent orange
@@ -367,7 +406,7 @@ class MyCanvas extends JPanel implements MouseListener, MouseMotionListener {
 			Stroke newStroke;
 			switch ( simpleDraw.currentMode ) {
 			case SimpleDraw.MODE_PENCIL :
-				newStroke = new Stroke();
+				newStroke = new Stroke(simpleDraw.currentColor);
 				for ( Point2D p : pointerHistory ) {
 					newStroke.addPoint( gw.convertPixelsToWorldSpaceUnits( p ) );
 				}
@@ -504,9 +543,17 @@ public class SimpleDraw implements ActionListener {
 	public static final int MODE_MOVE_SELECTION = 2;
 	public static final int NUM_MODES = 3;
 
+	public static final int COLOR_BLACK = 0;
+	public static final int COLOR_RED = 1;
+	public static final int COLOR_GREEN = 2;
+	public static final int COLORS = 3;
+	
 	JRadioButton [] modeButtons = new JRadioButton[ NUM_MODES ];
 	public String [] modeNames = new String[ NUM_MODES ];
+	JRadioButton [] colorButtons = new JRadioButton[ COLORS ];
+	public String [] colorNames = new String[COLORS];
 	public int currentMode = MODE_PENCIL;
+	public int currentColor = COLOR_BLACK;
 
 	JButton copyButton;
 	JButton deleteButton;
@@ -518,7 +565,11 @@ public class SimpleDraw implements ActionListener {
 		currentMode = mode;
 		modeButtons[mode].setSelected(true);
 	}
-
+	public void setCurrentColor( int color) {
+		currentColor = color;
+		colorButtons[color].setSelected(true);
+	}
+	
 	public void actionPerformed(ActionEvent e) {
 		Object source = e.getSource();
 		if ( source == clearMenuItem ) {
@@ -586,6 +637,12 @@ public class SimpleDraw implements ActionListener {
 					return;
 				}
 			}
+			for ( int i = 0; i < COLORS; ++i ) {
+				if (source == colorButtons[i]){
+					currentColor = i;
+					return;
+				}
+			}
 		}
 	}
 
@@ -604,6 +661,11 @@ public class SimpleDraw implements ActionListener {
 		modeNames[ MODE_RECT_SELECT ] = "Rectangle Select";
 		modeNames[ MODE_MOVE_SELECTION ] = "Move Selection";
 
+		colorNames[ COLOR_BLACK ] = "Black";
+		colorNames[ COLOR_RED ] = "Red";
+		colorNames[ COLOR_GREEN ] = "Green";
+		
+		
 		frame = new JFrame( applicationName );
 		frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
 
@@ -642,6 +704,24 @@ public class SimpleDraw implements ActionListener {
 		pane.add( toolPanel );
 		pane.add( canvas );
 
+		JLabel jlabel = new JLabel("Draw Color");
+	    jlabel.setFont(new Font("Verdana",1,15));
+	    toolPanel.add(jlabel);
+		ButtonGroup group2 = new ButtonGroup();
+		for ( int i = 0; i < NUM_MODES; ++i ) {
+			colorButtons[i] = new JRadioButton( colorNames[i] );
+			colorButtons[i].setAlignmentX( Component.LEFT_ALIGNMENT );
+			colorButtons[i].addActionListener(this);
+			if ( i == currentColor )
+				colorButtons[i].setSelected(true);
+			toolPanel.add( colorButtons[i] );
+			group2.add( colorButtons[i] );
+		}
+		
+		JLabel jlabel2 = new JLabel("Tools");
+	    jlabel2.setFont(new Font("Verdana",1,15));
+	    toolPanel.add(jlabel2);
+		
 		ButtonGroup group = new ButtonGroup();
 		for ( int i = 0; i < NUM_MODES; ++i ) {
 			modeButtons[i] = new JRadioButton( modeNames[i] );

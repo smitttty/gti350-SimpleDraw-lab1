@@ -244,7 +244,7 @@ class GraphicsWrapper {
 		g2.draw( line2D );
 	}
 
-	public void drawPolyline( ArrayList< Point2D > points, boolean isClosed, boolean isFilled ) {
+	public void drawPolyline( ArrayList< Point2D > points, boolean isClosed, boolean isFilled, Color color ) {
 		if ( points.size() <= 1 )
 			return;
 		path2D.reset();
@@ -254,20 +254,23 @@ class GraphicsWrapper {
 			p = points.get(i);
 			path2D.lineTo( p.x(), p.y() );
 		}
+		
+		g2.setColor(color);
+		
 		if ( isClosed )
 			path2D.closePath();
 		if ( isFilled ) g2.fill( path2D );
 		else g2.draw( path2D );
 	}
 
-	public void drawPolyline( ArrayList< Point2D > points ) {
-		drawPolyline( points, false, false );
+	public void drawPolyline( ArrayList< Point2D > points, Color color ) {
+		drawPolyline( points, false, false, color );
 	}
-	public void drawPolygon( ArrayList< Point2D > points ) {
-		drawPolyline( points, true, false );
+	public void drawPolygon( ArrayList< Point2D > points, Color color ) {
+		drawPolyline( points, true, false, color );
 	}
-	public void fillPolygon( ArrayList< Point2D > points ) {
-		drawPolyline( points, true, true );
+	public void fillPolygon( ArrayList< Point2D > points, Color color ) {
+		drawPolyline( points, true, true, color );
 	}
 
 	public void drawRect( float x, float y, float w, float h, boolean isFilled ) {
